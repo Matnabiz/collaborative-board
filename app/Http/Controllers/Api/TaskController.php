@@ -22,8 +22,14 @@ class TaskController extends Controller
         $tasks = Task::with('user:id,name,color')
             ->whereDate('board_date', $date)
             ->orderBy('created_at')
-            ->get();
+            ->get()
+            ->map(function ($task) {
+                if (!is_array($task->items)) {
+                    $task->items = [];
+                }
 
+                return $task;
+            });
         return response()->json($tasks);
     }
 
@@ -52,6 +58,7 @@ class TaskController extends Controller
         $task = Task::create([
             'user_id' => $request->user()->id,
             'content' => $request->content,
+            'items' => $request->items ?? [],
             'color' => $request->color ?? $request->user()->color,
             'pos_x' => $request->pos_x ?? rand(40, 640),
             'pos_y' => $request->pos_y ?? rand(40, 380),
@@ -80,6 +87,11 @@ class TaskController extends Controller
             'pos_x' => 'sometimes|numeric',
             'pos_y' => 'sometimes|numeric',
             'rotation' => 'sometimes|numeric|between:-25,25',
+            'items' => 'sometimes|array|max:30',
+            'items.*.id' => 'required|string|max:64',
+            'items.*.text' => 'required|string|max:180',
+            'items.*.done' => 'required|boolean',
+            'items.*.priority' => 'nullable|in:none,low,medium,high',
         ]);
 
         if ($validator->fails()) {

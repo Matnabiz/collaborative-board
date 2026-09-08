@@ -32,6 +32,7 @@ class Task extends Model
             'pos_y' => 'float',
             'rotation' => 'float',
             'board_date' => 'date',
+            'items' => 'array',
         ];
     }
 
