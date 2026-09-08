@@ -6,10 +6,11 @@ return [
     'allowed_methods' => ['*'],
     'allowed_origins' => [
         'http://localhost:5173',
+        'https://api.elemo.ir'
     ],
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
     'exposed_headers' => [],
     'max_age' => 3600,
-    'supports_credentials' => true,
+    'supports_credentials' => false,
 ];
