@@ -11,16 +11,58 @@ use Illuminate\Support\Facades\Validator;
 
 class TaskController extends Controller
 {
+
     /**
-     * List every sticky note on the board for a given day (defaults to today).
-     * GET /api/tasks?date=2026-09-07
+     * List sticky notes according to the selected time range.
+     *
+     * GET /api/tasks?range=today
+     * GET /api/tasks?range=week
+     * GET /api/tasks?range=month
+     * GET /api/tasks?range=all
      */
     public function index(Request $request): JsonResponse
     {
-        $date = $request->query('date', Carbon::today()->toDateString());
+        $range = $request->query('range', 'today');
 
-        $tasks = Task::with('user:id,name,color')
-            ->whereDate('board_date', $date)
+        if (!in_array($range, ['today', 'week', 'month', 'all'])) {
+            return response()->json([
+                'message' => 'Invalid range. Use today, week, month, or all.',
+            ], 422);
+        }
+
+        $query = Task::with('user:id,name,color');
+
+        switch ($range) {
+            case 'today':
+                $query->whereDate(
+                    'board_date',
+                    Carbon::today()
+                );
+                break;
+
+            case 'week':
+                $query->where(
+                    'board_date',
+                    '>=',
+                    Carbon::today()->subDays(6)->startOfDay()
+                );
+                break;
+
+            case 'month':
+                $query->where(
+                    'board_date',
+                    '>=',
+                    Carbon::today()->subDays(29)->startOfDay()
+                );
+                break;
+
+            case 'all':
+                // No date restriction.
+                break;
+        }
+
+        $tasks = $query
+            ->orderBy('board_date')
             ->orderBy('created_at')
             ->get()
             ->map(function ($task) {
@@ -30,6 +72,7 @@ class TaskController extends Controller
 
                 return $task;
             });
+
         return response()->json($tasks);
     }
 
