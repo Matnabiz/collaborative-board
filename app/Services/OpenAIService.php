@@ -10,7 +10,7 @@ class OpenAIService
     public function chat(string $message, ?string $previousResponseId = null): array
     {
         $payload = [
-            'model' => 'gpt-5',
+            'model' => 'gpt-4o',
             'instructions' => implode("\n", [
                 'You are the AI assistant inside Elemo.ir.',
                 'Be helpful, clear, concise, and conversational.',
@@ -27,7 +27,7 @@ class OpenAIService
         $response = Http::withToken(config('services.openai.api_key'))
             ->acceptJson()
             ->timeout(60)
-            ->post('https://api.openai.com/v1/responses', $payload);
+            ->post('https://api.gapgpt.app/v1', $payload);
 
         if ($response->failed()) {
             throw new RuntimeException(
