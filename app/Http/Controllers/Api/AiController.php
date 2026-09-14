@@ -38,8 +38,10 @@ class AiController extends Controller
             report($e);
 
             return response()->json([
-                'message' => 'The AI assistant is temporarily unavailable.',
-            ], 500);
+                'message' => 'AI request failed.',
+                'error' => $e->getMessage(),
+                'type' => get_class($e),
+                ], 500);
         }
     }
 }
