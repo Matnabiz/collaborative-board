@@ -2,24 +2,14 @@
 
 namespace App\Services;
 
-use OpenAI\Client;
+use Illuminate\Support\Facades\Http;
+use RuntimeException;
 
 class OpenAIService
 {
-    private Client $client;
-
-    public function __construct()
+    public function chat(string $message, ?string $previousResponseId = null): array
     {
-        $this->client = \OpenAI::client(
-            config('services.openai.api_key')
-        );
-    }
-
-    public function chat(
-        string $message,
-        ?string $previousResponseId = null
-    ): array {
-        $parameters = [
+        $payload = [
             'model' => 'gpt-5',
             'instructions' => implode("\n", [
                 'You are the AI assistant inside Elemo.ir.',
@@ -31,17 +21,37 @@ class OpenAIService
         ];
 
         if ($previousResponseId) {
-            $parameters['previous_response_id'] =
-                $previousResponseId;
+            $payload['previous_response_id'] = $previousResponseId;
         }
 
-        $response = $this->client
-            ->responses()
-            ->create($parameters);
+        $response = Http::withToken(config('services.openai.api_key'))
+            ->acceptJson()
+            ->timeout(60)
+            ->post('https://api.openai.com/v1/responses', $payload);
+
+        if ($response->failed()) {
+            throw new RuntimeException(
+                'OpenAI API error: ' . $response->body()
+            );
+        }
+
+        $data = $response->json();
+
+        $text = collect($data['output'] ?? [])
+            ->flatMap(fn ($item) => $item['content'] ?? [])
+            ->where('type', 'output_text')
+            ->pluck('text')
+            ->implode("\n");
+
+        if (!$text) {
+            throw new RuntimeException(
+                'OpenAI returned no output text.'
+            );
+        }
 
         return [
-            'message' => $response->outputText,
-            'response_id' => $response->id,
+            'message' => $text,
+            'response_id' => $data['id'] ?? null,
         ];
     }
 }
