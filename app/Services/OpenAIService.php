@@ -27,7 +27,7 @@ class OpenAIService
         $response = Http::withToken(config('services.openai.api_key'))
             ->acceptJson()
             ->timeout(60)
-            ->post('https://api.gapgpt.app/v1', $payload);
+            ->post('https://api.gapgpt.app/v1/responses', $payload);
 
         if ($response->failed()) {
             throw new RuntimeException(
